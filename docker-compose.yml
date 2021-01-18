@@ -1,0 +1,49 @@
+version: "3.7"
+
+services:
+  proxy:
+    build: proxy
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - ssr
+    networks:
+      net:
+        aliases:
+          - politicon.loc
+  ssr:
+    build: wclient
+    command: ['ng', 'serve', 'app-client', '--host', '0.0.0.0', '--disable-host-check']
+    volumes:
+      - ./app/src/front-end/src:/var/www/src
+      - /var/www/node_modules
+    environment:
+      APP_ENV: ${APP_ENV}
+    depends_on:
+      - redis
+    networks:
+      net:
+  api:
+    build: api
+    ports:
+      - "8081:80"
+    volumes:
+      - ./api/src:/srv
+      - ./api/src/vendor:/srv/vendor
+    environment:
+      APP_NAME: API
+      REDIS_HOST: redis
+      APP_ENV: ${APP_ENV}
+    networks:
+      net:
+    depends_on:
+      - redis
+  redis:
+    image: "redis:alpine"
+    networks:
+      net:
+    volumes:
+      - ./redis/data:/redis
+networks:
+  net:

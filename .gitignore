@@ -1,0 +1,4 @@
+.idea
+docker-compose.dev.yml
+dev.env
+*.local
