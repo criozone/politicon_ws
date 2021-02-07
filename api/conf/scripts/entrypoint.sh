@@ -1,18 +1,31 @@
-#!/bin/bash
+#!/bin/sh
 
-mkdir -p /srv/storage/logs
-mkdir -p /srv/storage/framework/aspect
-mkdir -p /srv/storage/framework/cache/data
-mkdir -p /srv/storage/app/public
-rm -rf /srv/bootstrap/cache/*.php
-rm -rf /srv/storage/framework/aspect/_annotations/*
-rm -rf /srv/storage/framework/aspect/_aspect/*
+VENDOR_PATH="${ROOT_PATH}vendor";
+ROOT_LENGTH=${#ROOT_PATH};
 
-php artisan storage:link
-php artisan config:cache
-php artisan route:cache
-php artisan storage:link
+if [ ! $ROOT_LENGTH -gt 0 ]
+then
+  echo "Project ROOT not specified. Please set the 'ROOT_PATH' env variable pointing to the root of the service.";
+  exit 1;
+fi
 
-chown nginx:nginx -R /srv/bootstrap
-chown nginx:nginx -R /srv/storage
+cd $ROOT_PATH;
 
+if [ ! -d "$VENDOR_PATH" ]
+then
+
+  # Run Composer install
+  composer install --verbose --no-progress 2>&1
+fi
+
+if [ ! -f "${ROOT_PATH}.env" ]
+then
+  cat ./.env.example > .env
+fi
+
+php artisan key:generate
+
+chmod -R 777 "$VENDOR_PATH";
+
+service nginx start
+php-fpm
